@@ -14,7 +14,7 @@ import { exportToMermaid, exportToBPMN } from './utils/exporters';
 import { applyModifications } from './utils/diagramModifier';
 
 function App() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, isConfigured } = useAuth();
   const {
     diagrams,
     currentDiagram,
@@ -40,16 +40,12 @@ function App() {
   const [showHelp, setShowHelp] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
 
-  // Debug logs
+  // Criar diagrama padrão se não houver nenhum
   useEffect(() => {
-    console.log('App state:', {
-      authLoading,
-      user: user?.email,
-      diagramsLoading,
-      diagramsCount: diagrams.length,
-      currentDiagram: currentDiagram?.name,
-    });
-  }, [authLoading, user, diagramsLoading, diagrams.length, currentDiagram]);
+    if (!authLoading && !diagramsLoading && diagrams.length === 0) {
+      createDiagram('Meu Primeiro Diagrama');
+    }
+  }, [authLoading, diagramsLoading, diagrams.length]);
 
   const handleDragStart = (elementType: BPMNElement['type'] | 'pool', event: React.DragEvent) => {
     const rect = (event.target as HTMLElement).getBoundingClientRect();
@@ -144,80 +140,67 @@ function App() {
       />
       
       <div className="flex-1 flex flex-col">
-        {user && (
-          <Toolbar
-            onDragStart={handleDragStart}
-            onExport={handleExport}
-            onSave={handleSave}
-          />
-        )}
+        <Toolbar
+          onDragStart={handleDragStart}
+          onExport={handleExport}
+          onSave={handleSave}
+        />
         
-        {user ? (
-          currentDiagram ? (
-            <Canvas
-              diagram={currentDiagram}
-              onUpdateDiagram={updateDiagram}
-              draggedElement={draggedElement}
-            />
-          ) : (
-            <div className="flex-1 flex items-center justify-center bg-gray-50">
-              <div className="text-center">
-                {diagramsLoading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                    <p className="text-gray-600">Carregando diagramas...</p>
-                  </>
-                ) : (
-                  <>
-                    <h2 className="text-2xl font-semibold text-gray-900 mb-2">
-                      Bem-vindo ao BPMN Designer
-                    </h2>
-                    <p className="text-gray-600 mb-4">
-                      Crie seu primeiro diagrama para começar
-                    </p>
-                    <button
-                      onClick={() => handleCreateDiagram('Meu Primeiro Diagrama')}
-                      className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                    >
-                      Criar Primeiro Diagrama
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-          )
+        {currentDiagram ? (
+          <Canvas
+            diagram={currentDiagram}
+            onUpdateDiagram={updateDiagram}
+            draggedElement={draggedElement}
+          />
         ) : (
           <div className="flex-1 flex items-center justify-center bg-gray-50">
-            <div className="text-center max-w-md mx-auto p-8">
-              <h2 className="text-3xl font-bold text-gray-900 mb-4">
-                BPMN Designer
-              </h2>
-              <p className="text-gray-600 mb-8">
-                Crie diagramas BPMN profissionais com o poder da inteligência artificial. 
-                Faça login para salvar seus diagramas na nuvem.
-              </p>
-              <button
-                onClick={() => setShowAuth(true)}
-                className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
-              >
-                Começar Agora
-              </button>
+            <div className="text-center">
+              {diagramsLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                  <p className="text-gray-600">Carregando diagramas...</p>
+                </>
+              ) : (
+                <>
+                  <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+                    Bem-vindo ao BPMN Designer
+                  </h2>
+                  <p className="text-gray-600 mb-4">
+                    {isConfigured && user 
+                      ? 'Crie seu primeiro diagrama para começar'
+                      : 'Ferramenta para criar diagramas BPMN profissionais'
+                    }
+                  </p>
+                  {!isConfigured && (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4 max-w-md mx-auto">
+                      <p className="text-yellow-800 text-sm">
+                        <strong>Modo Local:</strong> Seus diagramas serão salvos apenas no navegador. 
+                        Configure o Supabase para salvar na nuvem.
+                      </p>
+                    </div>
+                  )}
+                  <button
+                    onClick={() => handleCreateDiagram('Meu Primeiro Diagrama')}
+                    className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                  >
+                    Criar Primeiro Diagrama
+                  </button>
+                </>
+              )}
             </div>
           </div>
         )}
       </div>
 
-      {user && (
-        <ChatPanel
-          isOpen={isChatOpen}
-          onToggle={() => setIsChatOpen(!isChatOpen)}
-          messages={messages}
-          onSendMessage={handleChatMessage}
-          isLoading={isLoading}
-          settings={settings}
-          onUpdateSettings={updateSettings}
-        />
-      )}
+      <ChatPanel
+        isOpen={isChatOpen}
+        onToggle={() => setIsChatOpen(!isChatOpen)}
+        messages={messages}
+        onSendMessage={handleChatMessage}
+        isLoading={isLoading}
+        settings={settings}
+        onUpdateSettings={updateSettings}
+      />
 
       {showAbout && (
         <AboutPage onClose={() => setShowAbout(false)} />
@@ -227,7 +210,7 @@ function App() {
         <HelpPage onClose={() => setShowHelp(false)} />
       )}
 
-      {showAuth && (
+      {showAuth && isConfigured && (
         <AuthModal
           isOpen={showAuth}
           onClose={() => setShowAuth(false)}
