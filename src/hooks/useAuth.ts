@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabase';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 export interface UserProfile {
   id: string;
@@ -22,6 +22,15 @@ export const useAuth = () => {
     // Função para inicializar a autenticação
     const initializeAuth = async () => {
       try {
+        // Se o Supabase não estiver configurado, apenas definir loading como false
+        if (!isSupabaseConfigured()) {
+          console.log('Supabase not configured, running in local mode');
+          if (mounted) {
+            setLoading(false);
+          }
+          return;
+        }
+
         // Obter sessão inicial
         const { data: { session }, error } = await supabase.auth.getSession();
         
@@ -53,32 +62,41 @@ export const useAuth = () => {
 
     initializeAuth();
 
-    // Escutar mudanças de autenticação
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', event, session?.user?.email);
-      
-      if (mounted) {
-        setSession(session);
-        setUser(session?.user ?? null);
+    // Só configurar listener se o Supabase estiver configurado
+    if (isSupabaseConfigured()) {
+      // Escutar mudanças de autenticação
+      const {
+        data: { subscription },
+      } = supabase.auth.onAuthStateChange(async (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.email);
         
-        if (session?.user) {
-          await loadUserProfile(session.user.id);
-        } else {
-          setProfile(null);
-          setLoading(false);
+        if (mounted) {
+          setSession(session);
+          setUser(session?.user ?? null);
+          
+          if (session?.user) {
+            await loadUserProfile(session.user.id);
+          } else {
+            setProfile(null);
+            setLoading(false);
+          }
         }
-      }
-    });
+      });
+
+      return () => {
+        mounted = false;
+        subscription.unsubscribe();
+      };
+    }
 
     return () => {
       mounted = false;
-      subscription.unsubscribe();
     };
   }, []);
 
   const loadUserProfile = async (userId: string) => {
+    if (!isSupabaseConfigured()) return;
+
     try {
       const { data, error } = await supabase
         .from('user_profiles')
@@ -103,6 +121,8 @@ export const useAuth = () => {
   };
 
   const createUserProfile = async (userId: string) => {
+    if (!isSupabaseConfigured()) return;
+
     try {
       const { data: userData } = await supabase.auth.getUser();
       if (userData.user) {
@@ -126,6 +146,10 @@ export const useAuth = () => {
   };
 
   const signUp = async (email: string, password: string, fullName: string) => {
+    if (!isSupabaseConfigured()) {
+      return { data: null, error: new Error('Supabase não configurado') };
+    }
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -140,6 +164,10 @@ export const useAuth = () => {
   };
 
   const signIn = async (email: string, password: string) => {
+    if (!isSupabaseConfigured()) {
+      return { data: null, error: new Error('Supabase não configurado') };
+    }
+
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -149,6 +177,13 @@ export const useAuth = () => {
   };
 
   const signOut = async () => {
+    if (!isSupabaseConfigured()) {
+      setUser(null);
+      setProfile(null);
+      setSession(null);
+      return { error: null };
+    }
+
     const { error } = await supabase.auth.signOut();
     if (!error) {
       setUser(null);
@@ -159,7 +194,9 @@ export const useAuth = () => {
   };
 
   const updateProfile = async (updates: Partial<UserProfile>) => {
-    if (!user) return { error: new Error('Usuário não autenticado') };
+    if (!user || !isSupabaseConfigured()) {
+      return { error: new Error('Usuário não autenticado ou Supabase não configurado') };
+    }
 
     const { data, error } = await supabase
       .from('user_profiles')
@@ -184,5 +221,6 @@ export const useAuth = () => {
     signIn,
     signOut,
     updateProfile,
+    isConfigured: isSupabaseConfigured(),
   };
 };
