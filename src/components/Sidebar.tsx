@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, FileText, Trash2, ChevronLeft, ChevronRight, Edit2, Check, X, Info, HelpCircle, LogIn, LogOut, User, AlertTriangle } from 'lucide-react';
+import { Plus, FileText, Trash2, ChevronLeft, ChevronRight, Edit2, Check, X, Info, HelpCircle, LogIn, LogOut, User, AlertTriangle, Shield } from 'lucide-react';
 import { BPMNDiagram } from '../types/bpmn';
 import { useAuth } from '../hooks/useAuth';
 
@@ -90,13 +90,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <button
           onClick={() => setIsCollapsed(false)}
           className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+          title="Expandir sidebar"
         >
           <ChevronRight size={20} />
         </button>
+        
+        {/* User indicator when collapsed */}
+        {isConfigured && user && (
+          <div className="mt-4 mb-auto">
+            <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center">
+              <User size={16} className="text-white" />
+            </div>
+          </div>
+        )}
+
         {isConfigured && user && (
           <button
             onClick={() => setShowLogoutConfirm(true)}
-            className="mt-auto p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
             title="Sair"
           >
             <LogOut size={20} />
@@ -129,6 +140,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <button
               onClick={() => setIsCollapsed(true)}
               className="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+              title="Recolher sidebar"
             >
               <ChevronLeft size={20} />
             </button>
@@ -153,6 +165,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <div className="text-xs text-green-700 truncate">
                     {profile?.email || user.email}
                   </div>
+                  <div className="flex items-center gap-1 mt-1">
+                    <Shield size={12} className="text-green-600" />
+                    <span className="text-xs text-green-600 font-medium">Conta Verificada</span>
+                  </div>
                 </div>
               </div>
 
@@ -166,13 +182,29 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </button>
             </div>
           ) : (
-            <button
-              onClick={onShowAuth}
-              className="w-full flex items-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-            >
-              <LogIn size={20} />
-              Entrar / Cadastrar
-            </button>
+            <div className="space-y-3">
+              <button
+                onClick={onShowAuth}
+                className="w-full flex items-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              >
+                <LogIn size={20} />
+                Entrar / Cadastrar
+              </button>
+              
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <div className="flex items-start gap-2">
+                  <Shield size={16} className="text-blue-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-blue-800">Faça login para:</p>
+                    <ul className="text-xs text-blue-700 mt-1 space-y-0.5">
+                      <li>• Salvar na nuvem</li>
+                      <li>• Acessar de qualquer lugar</li>
+                      <li>• Backup automático</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
           )
         ) : (
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
@@ -181,7 +213,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <div>
                 <p className="text-sm font-medium text-yellow-800">Modo Local</p>
                 <p className="text-xs text-yellow-700 mt-1">
-                  Configure o Supabase para salvar na nuvem
+                  Configure o Supabase para salvar na nuvem e fazer login
                 </p>
               </div>
             </div>
@@ -286,10 +318,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         {diagram.name}
                       </h3>
                       <p className="text-sm text-gray-500 mt-1">
-                        {diagram.elements.length} elementos
+                        {diagram.elements.length} elementos • {diagram.connections.length} conexões
                       </p>
                       <p className="text-xs text-gray-400 mt-1">
-                        {diagram.updatedAt.toLocaleDateString('pt-BR')}
+                        Atualizado em {diagram.updatedAt.toLocaleDateString('pt-BR')}
                       </p>
                     </>
                   )}
@@ -330,6 +362,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
       </div>
 
+      {/* Storage Info */}
+      <div className="p-4 border-t border-gray-200">
+        <div className="bg-gray-100 rounded-lg p-3">
+          <div className="flex items-center gap-2 mb-2">
+            <div className={`w-2 h-2 rounded-full ${isConfigured && user ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
+            <span className="text-xs font-medium text-gray-700">
+              {isConfigured && user ? 'Salvando na Nuvem' : 'Salvando Localmente'}
+            </span>
+          </div>
+          <p className="text-xs text-gray-600">
+            {diagrams.length} diagrama{diagrams.length !== 1 ? 's' : ''} armazenado{diagrams.length !== 1 ? 's' : ''}
+          </p>
+        </div>
+      </div>
+
       {/* Logout Confirmation Modal */}
       {showLogoutConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[90]">
@@ -340,8 +387,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">Confirmar Logout</h3>
-                <p className="text-sm text-gray-600">Tem certeza que deseja sair?</p>
+                <p className="text-sm text-gray-600">Tem certeza que deseja sair da sua conta?</p>
               </div>
+            </div>
+            
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+              <p className="text-xs text-yellow-800">
+                <strong>Atenção:</strong> Seus diagramas continuarão salvos na nuvem e você pode acessá-los novamente fazendo login.
+              </p>
             </div>
             
             <div className="flex gap-3">
