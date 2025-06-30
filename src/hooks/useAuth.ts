@@ -138,6 +138,8 @@ export const useAuth = () => {
 
         if (!error && data) {
           setProfile(data);
+        } else {
+          console.error('Erro ao criar perfil:', error);
         }
       }
     } catch (error) {
@@ -150,17 +152,22 @@ export const useAuth = () => {
       return { data: null, error: new Error('Supabase não configurado') };
     }
 
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: fullName,
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: email.toLowerCase().trim(),
+        password,
+        options: {
+          data: {
+            full_name: fullName.trim(),
+          },
         },
-      },
-    });
+      });
 
-    return { data, error };
+      return { data, error };
+    } catch (error) {
+      console.error('Erro no signUp:', error);
+      return { data: null, error: error as Error };
+    }
   };
 
   const signIn = async (email: string, password: string) => {
@@ -168,12 +175,17 @@ export const useAuth = () => {
       return { data: null, error: new Error('Supabase não configurado') };
     }
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.toLowerCase().trim(),
+        password,
+      });
 
-    return { data, error };
+      return { data, error };
+    } catch (error) {
+      console.error('Erro no signIn:', error);
+      return { data: null, error: error as Error };
+    }
   };
 
   const signOut = async () => {
@@ -184,13 +196,18 @@ export const useAuth = () => {
       return { error: null };
     }
 
-    const { error } = await supabase.auth.signOut();
-    if (!error) {
-      setUser(null);
-      setProfile(null);
-      setSession(null);
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (!error) {
+        setUser(null);
+        setProfile(null);
+        setSession(null);
+      }
+      return { error };
+    } catch (error) {
+      console.error('Erro no signOut:', error);
+      return { error: error as Error };
     }
-    return { error };
   };
 
   const updateProfile = async (updates: Partial<UserProfile>) => {
@@ -198,18 +215,40 @@ export const useAuth = () => {
       return { error: new Error('Usuário não autenticado ou Supabase não configurado') };
     }
 
-    const { data, error } = await supabase
-      .from('user_profiles')
-      .update(updates)
-      .eq('id', user.id)
-      .select()
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .update(updates)
+        .eq('id', user.id)
+        .select()
+        .single();
 
-    if (!error && data) {
-      setProfile(data);
+      if (!error && data) {
+        setProfile(data);
+      }
+
+      return { data, error };
+    } catch (error) {
+      console.error('Erro ao atualizar perfil:', error);
+      return { data: null, error: error as Error };
+    }
+  };
+
+  const resetPassword = async (email: string) => {
+    if (!isSupabaseConfigured()) {
+      return { error: new Error('Supabase não configurado') };
     }
 
-    return { data, error };
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      return { error };
+    } catch (error) {
+      console.error('Erro ao resetar senha:', error);
+      return { error: error as Error };
+    }
   };
 
   return {
@@ -221,6 +260,7 @@ export const useAuth = () => {
     signIn,
     signOut,
     updateProfile,
+    resetPassword,
     isConfigured: isSupabaseConfigured(),
   };
 };
