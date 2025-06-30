@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, FileText, Trash2, ChevronLeft, ChevronRight, Edit2, Check, X, Info, HelpCircle, LogIn, LogOut, User, AlertTriangle, Shield } from 'lucide-react';
+import { Plus, FileText, Trash2, ChevronLeft, ChevronRight, Edit2, Check, X, Info, HelpCircle, LogIn, LogOut, User, AlertTriangle, Shield, Home, Star } from 'lucide-react';
 import { BPMNDiagram } from '../types/bpmn';
 import { useAuth } from '../hooks/useAuth';
 
@@ -13,6 +13,7 @@ interface SidebarProps {
   onShowAbout: () => void;
   onShowHelp: () => void;
   onShowAuth: () => void;
+  onBackToLanding: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -25,6 +26,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onShowAbout,
   onShowHelp,
   onShowAuth,
+  onBackToLanding,
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showNewDiagramInput, setShowNewDiagramInput] = useState(false);
@@ -124,6 +126,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <h1 className="text-xl font-semibold text-gray-900">BPMN Designer</h1>
           <div className="flex items-center gap-1">
             <button
+              onClick={onBackToLanding}
+              className="p-1 text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+              title="Voltar ao início"
+            >
+              <Home size={20} />
+            </button>
+            <button
               onClick={onShowHelp}
               className="p-1 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
               title="Ajuda"
@@ -166,8 +175,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     {profile?.email || user.email}
                   </div>
                   <div className="flex items-center gap-1 mt-1">
-                    <Shield size={12} className="text-green-600" />
-                    <span className="text-xs text-green-600 font-medium">Conta Verificada</span>
+                    <Star size={12} className="text-yellow-500" />
+                    <span className="text-xs text-green-600 font-medium">Plano Pro</span>
                   </div>
                 </div>
               </div>
@@ -204,19 +213,37 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   </div>
                 </div>
               </div>
+
+              <button
+                onClick={onBackToLanding}
+                className="w-full flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium"
+              >
+                <Star size={18} />
+                Upgrade por R$ 1,00
+              </button>
             </div>
           )
         ) : (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-            <div className="flex items-start gap-2">
-              <AlertTriangle size={16} className="text-yellow-600 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="text-sm font-medium text-yellow-800">Modo Local</p>
-                <p className="text-xs text-yellow-700 mt-1">
-                  Configure o Supabase para salvar na nuvem e fazer login
-                </p>
+          <div className="space-y-3">
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+              <div className="flex items-start gap-2">
+                <AlertTriangle size={16} className="text-yellow-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-sm font-medium text-yellow-800">Modo Gratuito</p>
+                  <p className="text-xs text-yellow-700 mt-1">
+                    Diagramas salvos apenas no navegador
+                  </p>
+                </div>
               </div>
             </div>
+
+            <button
+              onClick={onBackToLanding}
+              className="w-full flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium"
+            >
+              <Star size={18} />
+              Upgrade por R$ 1,00
+            </button>
           </div>
         )}
       </div>
