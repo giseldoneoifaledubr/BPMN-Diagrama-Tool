@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Plus, FileText, Trash2, ChevronLeft, ChevronRight, Edit2, Check, X, Info, HelpCircle, LogIn, LogOut, User, AlertTriangle, Shield, Home, Star } from 'lucide-react';
 import { BPMNDiagram } from '../types/bpmn';
 import { useAuth } from '../hooks/useAuth';
+import { SubscriptionCard } from './Subscription/SubscriptionCard';
 
 interface SidebarProps {
   diagrams: BPMNDiagram[];
@@ -180,6 +181,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   </div>
                 </div>
               </div>
+
+              {/* Subscription Card */}
+              <SubscriptionCard />
 
               {/* Logout Button */}
               <button

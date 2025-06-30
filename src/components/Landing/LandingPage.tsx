@@ -17,6 +17,8 @@ import {
   X
 } from 'lucide-react';
 import { AuthModal } from '../Auth/AuthModal';
+import { useSubscription } from '../../hooks/useSubscription';
+import { STRIPE_PRODUCTS } from '../../stripe-config';
 
 interface LandingPageProps {
   onGetStarted: () => void;
@@ -25,6 +27,8 @@ interface LandingPageProps {
 export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
   const [showAuth, setShowAuth] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<'free' | 'pro'>('free');
+  const [isUpgrading, setIsUpgrading] = useState(false);
+  const { createCheckoutSession } = useSubscription();
 
   const features = [
     {
@@ -83,12 +87,22 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
     }
   ];
 
-  const handlePlanSelect = (plan: 'free' | 'pro') => {
+  const handlePlanSelect = async (plan: 'free' | 'pro') => {
     setSelectedPlan(plan);
     if (plan === 'free') {
       onGetStarted();
     } else {
-      setShowAuth(true);
+      try {
+        setIsUpgrading(true);
+        const product = STRIPE_PRODUCTS[0]; // Assinatura Readability Metrics
+        await createCheckoutSession(product.priceId, product.mode);
+      } catch (error) {
+        console.error('Error creating checkout session:', error);
+        // Fallback to auth modal if checkout fails
+        setShowAuth(true);
+      } finally {
+        setIsUpgrading(false);
+      }
     }
   };
 
@@ -155,10 +169,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               </button>
               <button
                 onClick={() => handlePlanSelect('pro')}
-                className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-4 rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all font-semibold text-lg flex items-center gap-2 shadow-lg"
+                disabled={isUpgrading}
+                className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-4 rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all font-semibold text-lg flex items-center gap-2 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Star size={20} />
-                Upgrade por R$ 1,00
+                {isUpgrading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    Processando...
+                  </>
+                ) : (
+                  <>
+                    <Star size={20} />
+                    Upgrade por R$ 1,00
+                  </>
+                )}
               </button>
             </div>
 
@@ -280,7 +304,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               <div className="text-center mb-8">
                 <h3 className="text-2xl font-bold mb-2">Pro</h3>
                 <div className="text-4xl font-bold mb-2">R$ 1,00</div>
-                <p className="text-blue-100">Pagamento único</p>
+                <p className="text-blue-100">Por mês</p>
               </div>
 
               <ul className="space-y-4 mb-8">
@@ -316,9 +340,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
 
               <button
                 onClick={() => handlePlanSelect('pro')}
-                className="w-full bg-white text-blue-600 py-3 rounded-lg hover:bg-gray-100 transition-colors font-semibold"
+                disabled={isUpgrading}
+                className="w-full bg-white text-blue-600 py-3 rounded-lg hover:bg-gray-100 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Upgrade Agora
+                {isUpgrading ? 'Processando...' : 'Upgrade Agora'}
               </button>
             </div>
           </div>
@@ -329,7 +354,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             </p>
             <div className="inline-flex items-center gap-2 bg-green-100 text-green-800 px-4 py-2 rounded-full text-sm">
               <Shield size={16} />
-              Pagamento seguro • Sem mensalidades • Sem pegadinhas
+              Pagamento seguro • Cancele quando quiser • Sem pegadinhas
             </div>
           </div>
         </div>
@@ -387,10 +412,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             </button>
             <button
               onClick={() => handlePlanSelect('pro')}
-              className="bg-yellow-400 text-yellow-900 px-8 py-4 rounded-lg hover:bg-yellow-300 transition-colors font-semibold text-lg flex items-center justify-center gap-2"
+              disabled={isUpgrading}
+              className="bg-yellow-400 text-yellow-900 px-8 py-4 rounded-lg hover:bg-yellow-300 transition-colors font-semibold text-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Upgrade por R$ 1,00
-              <Star size={20} />
+              {isUpgrading ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-yellow-900"></div>
+                  Processando...
+                </>
+              ) : (
+                <>
+                  Upgrade por R$ 1,00
+                  <Star size={20} />
+                </>
+              )}
             </button>
           </div>
         </div>

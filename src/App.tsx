@@ -7,6 +7,7 @@ import { AboutPage } from './components/About/AboutPage';
 import { HelpPage } from './components/Help/HelpPage';
 import { AuthModal } from './components/Auth/AuthModal';
 import { LandingPage } from './components/Landing/LandingPage';
+import { SuccessPage } from './components/Success/SuccessPage';
 import { useDiagrams } from './hooks/useDiagrams';
 import { useChat } from './hooks/useChat';
 import { useAuth } from './hooks/useAuth';
@@ -42,6 +43,14 @@ function App() {
   const [showAuth, setShowAuth] = useState(false);
   const [showLanding, setShowLanding] = useState(true);
   const [hasStarted, setHasStarted] = useState(false);
+
+  // Check if this is the success page
+  const isSuccessPage = window.location.pathname === '/success' || window.location.search.includes('session_id');
+
+  // Show success page if we're on the success route
+  if (isSuccessPage) {
+    return <SuccessPage />;
+  }
 
   // Verificar se o usuário já começou a usar a aplicação
   useEffect(() => {
