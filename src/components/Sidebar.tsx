@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { Plus, FileText, Trash2, ChevronLeft, ChevronRight, Edit2, Check, X, Info, HelpCircle, LogIn, LogOut } from 'lucide-react';
+import { Plus, FileText, Trash2, ChevronLeft, ChevronRight, Edit2, Check, X, Info, HelpCircle, LogIn, LogOut, User } from 'lucide-react';
 import { BPMNDiagram } from '../types/bpmn';
 import { useAuth } from '../hooks/useAuth';
-import { UserMenu } from './Auth/UserMenu';
 
 interface SidebarProps {
   diagrams: BPMNDiagram[];
@@ -32,8 +31,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [newDiagramName, setNewDiagramName] = useState('');
   const [renamingDiagramId, setRenamingDiagramId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
-  const { user, signOut, isConfigured } = useAuth();
+  const { user, profile, signOut, isConfigured } = useAuth();
 
   const handleCreateDiagram = () => {
     if (newDiagramName.trim()) {
@@ -81,6 +81,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const handleSignOut = async () => {
     await signOut();
+    setShowLogoutConfirm(false);
   };
 
   if (isCollapsed) {
@@ -94,7 +95,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </button>
         {isConfigured && user && (
           <button
-            onClick={handleSignOut}
+            onClick={() => setShowLogoutConfirm(true)}
             className="mt-auto p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
             title="Sair"
           >
@@ -140,13 +141,28 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className="p-4 border-b border-gray-200">
           {user ? (
             <div className="space-y-3">
-              <UserMenu />
+              {/* User Info */}
+              <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
+                  <User size={18} className="text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium text-gray-900 truncate">
+                    {profile?.full_name || 'Usuário'}
+                  </div>
+                  <div className="text-xs text-gray-600 truncate">
+                    {profile?.email || user.email}
+                  </div>
+                </div>
+              </div>
+
+              {/* Logout Button */}
               <button
-                onClick={handleSignOut}
+                onClick={() => setShowLogoutConfirm(true)}
                 className="w-full flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors font-medium border border-red-200 hover:border-red-300"
               >
                 <LogOut size={18} />
-                Sair
+                Sair da Conta
               </button>
             </div>
           ) : (
@@ -300,6 +316,38 @@ export const Sidebar: React.FC<SidebarProps> = ({
           )}
         </div>
       </div>
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[90]">
+          <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm mx-4">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                <LogOut className="text-red-600" size={20} />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Confirmar Logout</h3>
+                <p className="text-sm text-gray-600">Tem certeza que deseja sair?</p>
+              </div>
+            </div>
+            
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowLogoutConfirm(false)}
+                className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors font-medium"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSignOut}
+                className="flex-1 px-4 py-2 text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors font-medium"
+              >
+                Sair
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
