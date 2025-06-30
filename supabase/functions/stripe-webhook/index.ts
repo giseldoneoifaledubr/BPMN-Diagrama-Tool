@@ -6,7 +6,7 @@ const stripeSecret = Deno.env.get('STRIPE_SECRET_KEY')!;
 const stripeWebhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET')!;
 const stripe = new Stripe(stripeSecret, {
   appInfo: {
-    name: 'Bolt Integration',
+    name: 'BPMN Designer',
     version: '1.0.0',
   },
 });
@@ -141,7 +141,7 @@ async function syncCustomerFromStripe(customerId: string) {
       const { error: noSubError } = await supabase.from('stripe_subscriptions').upsert(
         {
           customer_id: customerId,
-          subscription_status: 'not_started',
+          status: 'not_started',
         },
         {
           onConflict: 'customer_id',
